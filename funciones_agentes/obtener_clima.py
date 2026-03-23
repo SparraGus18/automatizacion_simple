@@ -2,7 +2,7 @@ from selenium.webdriver.common.by import By
 import time
 
 def obtener_clima(driver, user_input):
-    # Diccionario de mapeo: Palabra clave -> Emoji
+    
     iconos_clima = {
         "soleado": "☀️",
         "despejado": "🌙" if "noche" in user_input else "☀️",
@@ -26,8 +26,7 @@ def obtener_clima(driver, user_input):
         condicion = driver.find_element(By.ID, "wob_dc").text.lower() # Pasamos a minúsculas
         lugar = driver.find_element(By.ID, "wob_loc").text
 
-        # Lógica para elegir el emoji
-        # Si no encuentra coincidencia, usa un emoji genérico de planeta 🌍
+        
         emoji = "🌍"
         for clave, simbolo in iconos_clima.items():
             if clave in condicion:
