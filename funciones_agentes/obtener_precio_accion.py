@@ -1,30 +1,35 @@
-# importar la función By de selenium.webdriver.common.by,
-# misma que permite seleccionar elementos de una página web
-# por medio de selectores CSS.
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
 
-# Función para obtener el precio de una acción
-# Parámetros:
-# - driver: objeto de Selenium WebDriver
-# - consulta: cadena de texto que contiene la consulta del usuario
-def obtener_precio_accion(driver, consulta):
-    # Buscar el precio de una acción en Google
-    driver.get(f"https://www.google.com/search?q=precio+acción+{consulta}")
-
-    # Bloque try-except para manejar errores
+def obtener_precio_accion(driver, user_input):
+    empresa = user_input.replace("precio", "").replace("accion", "").replace("de", "").strip()
     try:
-        # Obtener el nombre completo de la emprea
-        empresa = driver.find_element(By.CSS_SELECTOR, "div[class='PZPZlf ssJ7i B5dxMb']").text
+        # Buscamos en inglés para forzar el formato NASDAQ (USD)
+        driver.get(f"https://www.google.com/search?q=stock+price+{empresa}+nasdaq&hl=en")
+        time.sleep(3)
 
-        # Obtener el precio de la acción
-        precio = driver.find_element(By.CSS_SELECTOR, "span[jsname='vWLAgc']").text
+        # Intentamos detectar si hay un botón de cookies y lo saltamos
+        try:
+            botones = driver.find_elements(By.TAG_SCHEMA, "button")
+            for b in botones:
+                if "Accept" in b.text or "Aceptar" in b.text:
+                    b.click()
+                    time.sleep(1)
+        except: pass
 
-        # Obtener la divisa de la acción
-        divisa = 
-
-        # Obtener el ticker de la acción. Éste es el código que se usa para identificar la acción en la bolsa. Por ejemplo, el ticker de Apple es AAPL.
-        ticker = 
+        # Selector de alta prioridad para NASDAQ
+        wait = WebDriverWait(driver, 5)
+        precio_el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "span[jsname='L3mUVe']")))
+        precio = precio_el.text
         
-        return f"{empresa} [{ticker}]  ${precio} {divisa.upper()}."
-    except Exception as e:
-        return "No se pudo obtener el precio de la acción en este momento."
+        return f"La acción de {empresa.upper()} está en 📈${precio} USD.📉"
+
+    except Exception:
+        # Si falla el selector principal, buscamos el valor en el título de la página
+        # Google suele poner "Tesla Inc (TSLA) Stock Price & News"
+        titulo = driver.title
+        if "$" in titulo or "USD" in titulo:
+             return f"Dato desde el título: {titulo}"
+        return f"Google bloqueó la lectura para '{empresa}'. Intenta sin headless una vez."
